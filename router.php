@@ -84,12 +84,12 @@ class Router
                         continue;
                     }
 
-                    $callback && $callback();
-                    return true;
+                    return $callback();
                     break;
 
                 case self::TYPE_DEFAULT:
                     list($regex, $match_names) = $this->defaultPathToRegex($path);
+                    $match_names = $match_names ?: [];
                     $match = preg_match($regex, $request_uri, $matches);
 
                     if (!$match) {
@@ -102,8 +102,7 @@ class Router
                         $param_matches[$name] = $matches[++$i];
                     }
 
-                    $callback && $callback($this->_request, $param_matches);
-                    return true;
+                    return $callback($this->_request, $param_matches);
 
                     break;
 
@@ -117,7 +116,7 @@ class Router
                     }
 
                     array_shift($matches);
-                    $callback && $callback($this->_request, $matches);
+                    $callback($this->_request, $matches);
                     return true;
 
                     break;
