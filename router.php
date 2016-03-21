@@ -64,6 +64,7 @@ class Router
         $request_uri = $this->_request->getUri();
 
         foreach ($this->_routes as $route_data) {
+            $param_matches = null;
             $matches = null;
             $regex = null;
 
@@ -95,18 +96,27 @@ class Router
                         continue;
                     }
 
-                    $callback && $callback($this->_request, $matches);
+                    $i = 0;
+                    $param_matches = [];
+                    foreach ($match_names as $name) {
+                        $param_matches[$name] = $matches[++$i];
+                    }
+
+                    $callback && $callback($this->_request, $param_matches);
                     return true;
 
                     break;
 
                 case self::TYPE_REGEX:
                     $regex = '/^' . $path . '$/';
+                    $matches = [];
                     $match = preg_match($regex, $request_uri, $matches);
+
                     if (!$match) {
                         continue;
                     }
 
+                    array_shift($matches);
                     $callback && $callback($this->_request, $matches);
                     return true;
 

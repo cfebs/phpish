@@ -11,10 +11,12 @@ try {
     $result = $router->addStrict('/', [], function() {
             echo "matched home!<br>";
         })
-        ->addRegex('\/blog\/(cool[a-z])', [], function() {
+        ->addRegex('\/blog\/(cool[a-z])', [], function($r, $m) {
+            dump($r, $m);
             echo "matched blog REGEX!<br>";
         })
-        ->add('/blog/#id', [], function() {
+        ->add('/blog/#id', [], function($r, $m) {
+            dump($r, $m);
             echo "matched blog id NUM!<br>";
         })
         ->add('/blog/@id', [], function() {
