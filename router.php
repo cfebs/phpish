@@ -17,7 +17,8 @@ class Router
 
     const REGEX_ALL = '.*';
     const REGEX_ROUTE_NUM = '[[:digit:]]+';
-    const REGEX_ALPHA_NUM = '[[:alnum:]]+';
+    const REGEX_ROUTE_ALPHA = '[[:alpha:]]+';
+    const REGEX_ROUTE_ALPHA_NUM = '[[:alnum:]]+';
 
     public function __construct(Request $request)
     {
@@ -48,12 +49,24 @@ class Router
         return $this;
     }
 
+    // @chain
+    public function addMulti($routes = [])
+    {
+        foreach ($routes as $route) {
+            list($path, $options, $callback) = $route;
+            $this->add($path, $options, $callback);
+        }
+    }
+
     public function run()
     {
         $request_method = $this->_request->getMethod();
         $request_uri = $this->_request->getUri();
 
         foreach ($this->_routes as $route_data) {
+            $matches = null;
+            $regex = null;
+
             list($path, $options, $callback) = $route_data;
             $type = $options['type'];
 
@@ -76,29 +89,36 @@ class Router
 
                 case self::TYPE_DEFAULT:
                     list($regex, $match_names) = $this->defaultPathToRegex($path);
-                    $match = preg_match($regex, $path, $matches);
-                    dump($regex, $match_names, $match);
+                    $match = preg_match($regex, $request_uri, $matches);
 
                     if (!$match) {
                         continue;
                     }
 
                     $callback && $callback($this->_request, $matches);
+                    return true;
 
-                    // @todo handle match
                     break;
 
                 case self::TYPE_REGEX:
-                    $regex = $path;
-                    preg_match($regex);
-                    continue;
+                    $regex = '/^' . $path . '$/';
+                    $match = preg_match($regex, $request_uri, $matches);
+                    if (!$match) {
+                        continue;
+                    }
+
+                    $callback && $callback($this->_request, $matches);
+                    return true;
+
                     break;
 
                 default:
                     throw new Exception('Route type not properly defined');
+                    break;
             }
-
         }
+
+        return false;
     }
 
     // support different shortcuts
@@ -108,19 +128,25 @@ class Router
         $new_parts = [];
         foreach ($parts as $idx => $part) {
             $new_regex_part = null;
-            //  /blog/:name
+            // /blog/:name
             if ($part[0] === ':') {
                 $match_name = substr($part, 1);
                 $match_names[] = $match_name;
-                $new_regex_part = '(' . self::REGEX_ALPHA_NUM . ')';
+                $new_regex_part = '(' . self::REGEX_ROUTE_ALPHA_NUM . ')';
             }
-            //  /blog/#id
+            // /blog/#id
             else if ($part[0] === '#') {
                 $match_name = substr($part, 1);
                 $match_names[] = $match_name;
                 $new_regex_part = '(' . self::REGEX_ROUTE_NUM . ')';
             }
-            //  /blog/*path
+            // /blog/@id
+            else if ($part[0] === '@') {
+                $match_name = substr($part, 1);
+                $match_names[] = $match_name;
+                $new_regex_part = '(' . self::REGEX_ROUTE_ALPHA . ')';
+            }
+            // /blog/*path
             else if ($part[0] === '*') {
                 $match_name = substr($part, 1);
                 $match_names[] = $match_name;
@@ -130,7 +156,7 @@ class Router
             $new_parts[] = ($new_regex_part ?: $part);
         }
 
-        $regex = '/' . implode('\/', $new_parts) . '/';
+        $regex = '/^' . implode('\/', $new_parts) . '$/';
 
         return [$regex, $match_names];
     }
