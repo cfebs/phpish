@@ -1,0 +1,11 @@
+{
+    "name": "collin/phpish",
+    "require": {},
+    "config": {
+        "disable-tls": true,
+        "secure-http": false
+    },
+    "require-dev": {
+        "symfony/var-dumper": "^3.0"
+    }
+}
