@@ -20,9 +20,8 @@ class Router
     const REGEX_ROUTE_ALPHA = '[[:alpha:]]+';
     const REGEX_ROUTE_ALPHA_NUM = '[[:alnum:]]+';
 
-    public function __construct(Request $request)
+    public function __construct()
     {
-        $this->_request = $request;
     }
 
     // @chain
@@ -58,10 +57,10 @@ class Router
         }
     }
 
-    public function run()
+    public function run(Request $request)
     {
-        $request_method = $this->_request->getMethod();
-        $request_uri = $this->_request->getUri();
+        $request_method = $request->getMethod();
+        $request_uri = $request->getUri();
 
         foreach ($this->_routes as $route_data) {
             $param_matches = null;
@@ -102,7 +101,7 @@ class Router
                         $param_matches[$name] = $matches[++$i];
                     }
 
-                    return $callback($this->_request, $param_matches);
+                    return $callback($request, $param_matches);
 
                     break;
 
@@ -116,7 +115,7 @@ class Router
                     }
 
                     array_shift($matches);
-                    $callback($this->_request, $matches);
+                    $callback($request, $matches);
                     return true;
 
                     break;
